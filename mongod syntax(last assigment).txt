@@ -1,0 +1,81 @@
+Q1->
+db.student.aggregate([{$match:{"users_dates":{$gte:ISODate("2020-10-01"), $lt:ISODate("2020-10-31") }}},
+   
+  {
+     $project:
+	{
+	 "_id":0,
+	 "users_topics":1,
+	 "users_tasks":1
+	}
+  }
+])
+
+Q2->
+db.student.aggregate([{$match:{"users_dates":{$gte:ISODate("2020-10-15"), $lt:ISODate("2020-10-31") }}},
+   
+  {
+     $project:
+	{
+	 "_id":0,
+	 "company_drives":1
+	}
+  }
+])
+
+Q3->
+db.student.aggregate([{$match:{"users_attendance":{$eq:"Present"}}},
+   
+  {
+     $project:
+	{
+	 "_id":0,
+	 "user_id":1,
+	 "company_drives":1
+	}
+  }
+])
+
+Q4->db.student.aggregate([{ $group: { _id: null, TotalSum: { $sum: "$users_codekata_solved" } } } ]);
+
+Q5->
+db.mentors.aggregate([{$match:{"mentee_count":{$gt:15}}},
+   {
+     $lookup:
+       {
+         from: "student",
+         localField: "mentor_name",
+         foreignField: "users_mentors",
+         as: "mentorOfMentees"
+       }
+  },
+  {
+      $replaceRoot: { newRoot: { $mergeObjects: [ { $arrayElemAt: [ "$mentorOfMentees", 0 ] }, "$$ROOT" ] } }
+   },
+{$match:{"mentee_count":{$gt:15}}},
+{
+       $group:
+         {
+           _id: "$users_mentors"
+         }
+     }
+])
+
+Q6->
+db.student.aggregate([{$match:{"users_attendance":{$eq:"Absent"}}},
+{ $match: {
+    $or: [
+        { Dates: { $gte: ISODate("2020-10-31") } },
+        { Dates: { $lte: ISODate("2020-10-01") } }
+    ]
+} },
+   
+  {
+     $project:
+	{
+	 "_id":0,
+	 "user_id":1
+	}
+  }
+])
+
